@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Detection history · LeafCare{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container"><p class="eyebrow">YOUR ACTIVITY</p><h1>Detection history</h1><p>Review recent predictions from this browser-based project. Only the label, time, and confidence are stored—never the uploaded image.</p></div></section>
+<section class="container page-content">
+  <div class="panel history-panel">
+    <div class="panel-top"><div><span class="step-label">LOCAL RECORDS</span><h3>Previous leaf checks</h3></div><span class="count-pill">{{ predictions|length }} shown</span></div>
+    {% if predictions %}
+    <div class="history-table-wrap"><table class="history-table"><thead><tr><th>Date and time</th><th>Crop</th><th>Predicted class</th><th>Confidence</th></tr></thead><tbody>{% for item in predictions %}<tr><td>{{ item.created_at[:16].replace('T', ' ') }}</td><td>{{ item.crop }}</td><td><strong>{{ item.disease }}</strong></td><td><span class="table-confidence">{{ "%.1f"|format(item.confidence) }}%</span></td></tr>{% endfor %}</tbody></table></div>
+    {% else %}<div class="history-empty large-empty"><span>◷</span><h4>No detections yet</h4><p>Once the model is trained and you analyse a leaf photo, the result will be listed here.</p><a class="button button-primary" href="{{ url_for('index') }}">Go to detector <span>→</span></a></div>{% endif %}
+  </div>
+  <p class="privacy-footnote">Privacy note: images are processed in memory and are not written to the uploads folder. Local prediction history is stored in <code>instance/crop_history.db</code>.</p>
+</section>
+{% endblock %}
