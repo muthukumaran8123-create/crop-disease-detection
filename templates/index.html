@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}LeafCare · Detect crop leaf disease{% endblock %}
+{% block content %}
+<section class="hero-section">
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <div class="eyebrow"><span class="eyebrow-dot"></span> SMARTER CROP CARE STARTS HERE</div>
+      <h1>Give your crops a<br><span>healthier future.</span></h1>
+      <p class="hero-text">Upload one leaf photo or several crop photos to get AI-based disease estimates, helpful context, and practical prevention tips.</p>
+      <div class="hero-points">
+        <span><b class="check-dot">✓</b> Quick image analysis</span>
+        <span><b class="check-dot">✓</b> Easy-to-read guidance</span>
+        <span><b class="check-dot">✓</b> No account needed</span>
+      </div>
+      <div class="hero-note"><span aria-hidden="true">🌿</span><span>Built for students, growers, and curious plant lovers.</span></div>
+    </div>
+    <div class="hero-art" aria-label="Illustration of a healthy plant">
+      <div class="art-sun"></div><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
+      <div class="plant-pot"><div class="pot-rim"></div><div class="pot-body"></div><div class="pot-base"></div></div>
+      <div class="plant-stem"></div>
+      <div class="leaf leaf-one"><span></span></div><div class="leaf leaf-two"><span></span></div>
+      <div class="leaf leaf-three"><span></span></div><div class="leaf leaf-four"><span></span></div>
+      <div class="art-label label-top"><span class="label-icon">✦</span><span><b>Better crop care</b><small>One leaf at a time</small></span></div>
+      <div class="art-label label-bottom"><span class="pulse-mark">●</span><span><b>Plant health</b><small>Observe · Understand · Act</small></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="container work-section" id="detector">
+  <div class="section-heading">
+    <div><p class="eyebrow">THE LEAF CHECK</p><h2>What does your leaf tell you?</h2><p class="section-subtitle">Choose one photo or add up to five photos in a single batch. For the most reliable results, use close-up leaf photos because the model is trained on leaf images.</p></div>
+    <div class="privacy-pill"><span aria-hidden="true">🔒</span> Images are not saved</div>
+  </div>
+
+  {% if not model_ready %}
+  <div class="setup-banner">
+    <span class="setup-icon" aria-hidden="true">⚙</span>
+    <div><strong>One quick setup step remains</strong><p>The website is ready, but no trained disease model is installed yet. Download the PlantVillage dataset and run the training command in <code>README.md</code>. The upload form unlocks automatically after the model files are created.</p></div>
+    <a class="text-link" href="{{ url_for('about') }}#training">View setup steps <span>→</span></a>
+  </div>
+  {% endif %}
+
+  <div class="detector-grid">
+    <div class="panel upload-panel">
+      <div class="panel-top"><div><span class="step-label">STEP 01</span><h3>Add crop photos</h3></div><span class="panel-icon">↥</span></div>
+      <p class="panel-description">Choose one leaf photo or add up to five crop photos. JPG, PNG, or WEBP · 8 MB per image.</p>
+      <form action="{{ url_for('index') }}" method="post" enctype="multipart/form-data" id="upload-form" data-model-ready="{{ 'true' if model_ready else 'false' }}">
+        <input type="hidden" name="upload_mode" id="upload-mode" value="single">
+        <div class="upload-mode-switch" role="group" aria-label="Choose photo upload option">
+          <button class="upload-mode-button is-active" type="button" data-upload-mode="single" aria-pressed="true">One leaf photo</button>
+          <button class="upload-mode-button" type="button" data-upload-mode="multiple" aria-pressed="false">Multiple crop photos <span>Up to 5</span></button>
+        </div>
+
+        <div class="upload-mode-content" id="single-upload" data-mode-content="single">
+          <label class="drop-zone {% if not model_ready %}drop-zone-disabled{% endif %}" for="leaf-image" id="drop-zone">
+            <input id="leaf-image" name="leaf_image" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" {% if not model_ready %}disabled{% endif %}>
+            <div id="upload-placeholder" class="upload-placeholder">
+              <div class="upload-icon-wrap"><span aria-hidden="true">↑</span></div>
+              <strong>Drop your leaf photo here</strong>
+              <span>or <em>browse files</em> on your device</span>
+              <small>Keep the leaf centred and in focus</small>
+            </div>
+            <div id="preview-wrap" class="preview-wrap" hidden>
+              <img id="image-preview" alt="Selected crop leaf preview">
+              <div class="preview-caption"><strong id="file-name">Selected image</strong><span id="file-size"></span></div>
+              <span class="change-photo">Choose a different photo</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="upload-mode-content" id="multiple-upload" data-mode-content="multiple" hidden>
+          <label class="drop-zone multi-drop-zone {% if not model_ready %}drop-zone-disabled{% endif %}" for="crop-images" id="multi-drop-zone">
+            <input id="crop-images" name="crop_images" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple disabled>
+            <div id="multi-upload-placeholder" class="upload-placeholder">
+              <div class="upload-icon-wrap"><span aria-hidden="true">↥</span></div>
+              <strong>Add photos of your crops</strong>
+              <span>or <em>browse multiple files</em> on your device</span>
+              <small>JPG, PNG or WEBP · 8 MB each · up to 5 photos</small>
+            </div>
+          </label>
+          <div id="multi-preview-grid" class="multi-preview-grid" hidden></div>
+          <button type="button" class="clear-photos-button" id="clear-multi-photos" hidden>Remove all selected photos</button>
+          <p class="multi-photo-note">Tip: the disease model is trained on leaf images. Close-up photos of leaves work better than distant photos of a whole field or plant.</p>
+        </div>
+
+        <div class="upload-actions">
+          <span class="file-hint"><span aria-hidden="true">ⓘ</span> Clear, well-lit photos work best</span>
+          <button class="button button-primary" id="detect-button" type="submit" {% if not model_ready %}disabled{% endif %}><span>Analyse selected photo</span><span aria-hidden="true">→</span></button>
+        </div>
+      </form>
+      <div class="progress-message" id="progress-message" hidden><span class="spinner"></span> Analysing your photo(s)… please keep this tab open.</div>
+    </div>
+
+    <div class="panel result-panel" id="results">
+      {% if result %}
+        <div class="panel-top"><div><span class="step-label">STEP 02</span><h3>Your leaf report</h3></div><span class="result-status">Analysis complete</span></div>
+        <div class="result-summary">
+          <img class="result-image" src="{{ preview_data }}" alt="Uploaded crop leaf photo">
+          <div class="result-main"><span class="result-kicker">MOST LIKELY MATCH</span><h4>{{ result.disease }}</h4><p class="crop-label">Crop: <strong>{{ result.crop }}</strong></p><div class="confidence-line"><span>Model confidence</span><strong>{{ "%.1f"|format(result.confidence) }}%</strong></div><div class="confidence-track"><span style="width: {{ [result.confidence, 100]|min }}%"></span></div></div>
+        </div>
+        {% if low_confidence %}<div class="confidence-warning"><strong>Low-confidence result</strong><span>The image may not match any class well. Try another photo and confirm with an agricultural expert.</span></div>{% endif %}
+        <div class="guide-block"><span class="guide-symbol">⌕</span><div><h5>What you may notice</h5><p>{{ result.guide.symptoms }}</p></div></div>
+        <div class="guide-block"><span class="guide-symbol guide-symbol-green">✓</span><div><h5>Prevention and next steps</h5><p>{{ result.guide.prevention }}</p></div></div>
+        {% if alternatives %}<details class="alternatives"><summary>See other possible matches</summary><div class="alternative-list">{% for item in alternatives %}<div><span>{{ item.crop }} · {{ item.disease }}</span><strong>{{ "%.1f"|format(item.confidence) }}%</strong></div>{% endfor %}</div></details>{% endif %}
+        <div class="result-disclaimer">This is an AI estimate, not a confirmed diagnosis. Dataset photos may differ from real field conditions. Confirm before making crop-management or treatment decisions.</div>
+        <a class="button button-secondary full-button" href="{{ url_for('index') }}#detector">Check another leaf <span>↻</span></a>
+      {% elif multi_results %}
+        <div class="panel-top"><div><span class="step-label">STEP 02</span><h3>Crop photo reports</h3></div><span class="result-status">{{ multi_results|length }} photo{% if multi_results|length != 1 %}s{% endif %} analysed</span></div>
+        <p class="batch-intro">Each photo has its own predicted class and confidence score. Results are estimates from the leaf-image model.</p>
+        <div class="batch-results">
+          {% for item in multi_results %}
+          <article class="batch-result-card">
+            <div class="batch-result-head">
+              <img class="batch-result-image" src="{{ item.preview_data }}" alt="Preview of {{ item.file_name }}">
+              <div class="batch-result-info"><small>PHOTO {{ loop.index }} · {{ item.file_name }}</small><h4>{{ item.result.disease }}</h4><p>Crop: <strong>{{ item.result.crop }}</strong></p><div class="confidence-line"><span>Model confidence</span><strong>{{ "%.1f"|format(item.result.confidence) }}%</strong></div><div class="confidence-track"><span style="width: {{ [item.result.confidence, 100]|min }}%"></span></div></div>
+            </div>
+            {% if item.low_confidence %}<div class="confidence-warning"><strong>Low-confidence result</strong><span>Try a clearer close-up leaf photo and confirm with an agricultural expert.</span></div>{% endif %}
+            <div class="guide-block"><span class="guide-symbol">⌕</span><div><h5>What you may notice</h5><p>{{ item.result.guide.symptoms }}</p></div></div>
+            <div class="guide-block"><span class="guide-symbol guide-symbol-green">✓</span><div><h5>Prevention and next steps</h5><p>{{ item.result.guide.prevention }}</p></div></div>
+            {% if item.alternatives %}<details class="alternatives"><summary>See other possible matches</summary><div class="alternative-list">{% for alternative in item.alternatives %}<div><span>{{ alternative.crop }} · {{ alternative.disease }}</span><strong>{{ "%.1f"|format(alternative.confidence) }}%</strong></div>{% endfor %}</div></details>{% endif %}
+          </article>
+          {% endfor %}
+        </div>
+        <div class="result-disclaimer">AI estimates are not confirmed diagnoses. Dataset images may differ from real field conditions. Confirm before making crop-management or treatment decisions.</div>
+        <a class="button button-secondary full-button" href="{{ url_for('index') }}#detector">Check more photos <span>↻</span></a>
+      {% else %}
+        <div class="panel-top"><div><span class="step-label">STEP 02</span><h3>Your leaf report</h3></div><span class="waiting-pill"><span></span> Waiting for image</span></div>
+        <div class="empty-result">
+          <div class="empty-illustration"><div class="empty-circle"><span class="empty-leaf">♧</span><span class="scan-line"></span></div><span class="spark spark-a">✦</span><span class="spark spark-b">✧</span></div>
+          <h4>Your results will appear here</h4><p>Upload a leaf photo and run the detector to see the predicted class, confidence score, symptoms, and prevention guidance.</p>
+          <div class="empty-steps"><div><span>1</span><small>Upload photo</small></div><i></i><div><span>2</span><small>AI analysis</small></div><i></i><div><span>3</span><small>Read report</small></div></div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="container how-section">
+  <div class="section-heading compact-heading"><div><p class="eyebrow">SIMPLE BY DESIGN</p><h2>From photo to next step</h2></div><p class="section-subtitle">Three small steps make plant-health information easier to explore.</p></div>
+  <div class="feature-grid">
+    <article class="feature-card"><div class="feature-number">01</div><div class="feature-icon feature-icon-leaf">⌁</div><h3>Capture</h3><p>Choose a clear, well-lit photo of the affected leaf, ideally with minimal background clutter.</p></article>
+    <article class="feature-card"><div class="feature-number">02</div><div class="feature-icon feature-icon-scan">◉</div><h3>Compare</h3><p>A trained image-classification model compares the photo with the crop and disease classes it learned.</p></article>
+    <article class="feature-card"><div class="feature-number">03</div><div class="feature-icon feature-icon-guide">☘</div><h3>Understand</h3><p>Review the likely match, confidence score, general symptoms, and safer next steps to investigate.</p></article>
+  </div>
+</section>
+
+<section class="container history-preview">
+  <div class="history-head"><div><p class="eyebrow">YOUR RECENT CHECKS</p><h2>Recent detections</h2></div><a class="text-link" href="{{ url_for('history') }}">View history <span>→</span></a></div>
+  {% if recent %}
+    <div class="recent-list">{% for item in recent %}<div class="recent-row"><div class="recent-leaf">♧</div><div class="recent-detail"><strong>{{ item.disease }}</strong><small>{{ item.crop }} · {{ item.created_at[:16].replace('T', ' ') }}</small></div><span class="recent-confidence">{{ "%.1f"|format(item.confidence) }}%</span></div>{% endfor %}</div>
+  {% else %}<div class="history-empty"><span>◷</span><p>Your completed checks will appear here. Uploaded images are not kept.</p></div>{% endif %}
+</section>
+{% endblock %}
