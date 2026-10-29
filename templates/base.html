@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#174d35">
+  <meta name="description" content="A student project that uses image classification to estimate common crop leaf diseases.">
+  <title>{% block title %}LeafCare · Crop Disease Detection{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="brand" href="{{ url_for('index') }}" aria-label="LeafCare home">
+        <span class="brand-mark" aria-hidden="true">✿</span>
+        <span>Leaf<span class="brand-light">Care</span><small>Crop health assistant</small></span>
+      </a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">Detect disease</a>
+        <a href="{{ url_for('history') }}" class="{% if request.endpoint == 'history' %}active{% endif %}">History</a>
+        <a href="{{ url_for('about') }}" class="{% if request.endpoint == 'about' %}active{% endif %}">About project</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="container flash-area" aria-live="polite">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}"><span>{{ message }}</span><button class="flash-close" type="button" aria-label="Dismiss message">×</button></div>
+        {% endfor %}
+      {% endwith %}
+    </div>
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span>LeafCare · BCA Final Year Project</span>
+      <span>AI-assisted learning tool · Always confirm important diagnoses locally</span>
+    </div>
+  </footer>
+</body>
+</html>
